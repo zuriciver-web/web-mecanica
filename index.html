@@ -67,13 +67,24 @@ footer {
   margin-top: 40px;
   font-size: 0.9em;
 }
+.resena {
+  margin-top: 30px;
+  background: #f1f6fc;
+  border-left: 4px solid var(--azul);
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 0.95em;
+}
+@media (max-width: 600px) {
+  input, select { width: 100%; }
+}
 </style>
 </head>
 <body>
 
 <header>
   <h1>🔧 Selección de Bombas Hidráulicas I.M.S.</h1>
-  <p>Simulador técnico de curvas y características</p>
+  <p>Simulador técnico de curvas, potencias y rendimiento</p>
 </header>
 
 <div class="container">
@@ -85,11 +96,14 @@ footer {
   <label>Modelo:</label>
   <select id="modelo"></select>
 
+  <label>RPM:</label>
+  <select id="rpm"></select>
+
   <label>Tipo de motor:</label>
   <select id="tipoMotor">
-    <option value="electrico">Eléctrico</option>
-    <option value="bencinero">Bencinero</option>
-    <option value="diesel">Diésel</option>
+    <option value="Eléctrico">Eléctrico</option>
+    <option value="Bencinero">Bencinero</option>
+    <option value="Diésel">Diésel</option>
   </select>
 
   <label>Potencia del motor (HP):</label>
@@ -99,10 +113,26 @@ footer {
 
   <div id="info" class="info"></div>
   <canvas id="grafico"></canvas>
+
+  <div class="resena">
+    <h3>📘 Cómo interpretar la curva</h3>
+    <p>
+      El eje <b>X</b> representa el <b>caudal (L/min)</b>, es decir, el volumen de agua que bombea la bomba.<br>
+      El eje <b>Y</b> muestra la <b>altura manométrica (m)</b> y la <b>potencia del motor (HP)</b>. 
+      <ul>
+        <li>🟦 <b>Curva azul:</b> indica la presión o altura que la bomba entrega según el caudal.</li>
+        <li>🟩 <b>Curva verde:</b> muestra la potencia absorbida por el motor.</li>
+        <li>🟧 <b>Curva naranja:</b> representa la eficiencia (%), ideal entre 70 y 85%.</li>
+        <li>🔴 <b>Curva roja:</b> (si aparece) muestra el <b>NPSH requerido</b> para evitar cavitación.</li>
+      </ul>
+      En general, una bomba trabaja mejor cerca de su <b>punto de máxima eficiencia (BEP)</b>,
+      donde se logra el mejor equilibrio entre caudal, altura y consumo.
+    </p>
+  </div>
 </div>
 
 <footer>
-  © 2025 MSBombas | Desarrollo técnico e hidráulico
+  © 2025 MSBombas | Desarrollado por zuriciver-web
 </footer>
 
 <script>
@@ -132,28 +162,49 @@ function cargarTipos() {
 
 function cargarModelos() {
   const tipo = document.getElementById("tipoBomba").value;
-  const select = document.getElementById("modelo");
-  select.innerHTML = '<option value="">-- Seleccione --</option>';
+  const selectModelo = document.getElementById("modelo");
+  selectModelo.innerHTML = '<option value="">-- Seleccione --</option>';
   const serie = dataBombas.find(s => s.nombre === tipo);
   if (!serie) return;
   serie.modelos.forEach(m => {
     const opt = document.createElement("option");
     opt.value = m.codigo;
     opt.textContent = m.codigo;
-    select.appendChild(opt);
+    selectModelo.appendChild(opt);
   });
-  select.addEventListener("change", cargarHP);
+  selectModelo.addEventListener("change", cargarRPM);
+}
+
+function cargarRPM() {
+  const tipo = document.getElementById("tipoBomba").value;
+  const modelo = document.getElementById("modelo").value;
+  const serie = dataBombas.find(s => s.nombre === tipo);
+  const mod = serie.modelos.find(m => m.codigo === modelo);
+  const selectRPM = document.getElementById("rpm");
+  selectRPM.innerHTML = "";
+  if (Array.isArray(mod.rpm)) {
+    mod.rpm.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r + " RPM";
+      selectRPM.appendChild(opt);
+    });
+  } else {
+    const opt = document.createElement("option");
+    opt.value = mod.rpm;
+    opt.textContent = mod.rpm + " RPM";
+    selectRPM.appendChild(opt);
+  }
+  cargarHP();
 }
 
 function cargarHP() {
   const tipo = document.getElementById("tipoBomba").value;
   const modelo = document.getElementById("modelo").value;
+  const serie = dataBombas.find(s => s.nombre === tipo);
+  const mod = serie.modelos.find(m => m.codigo === modelo);
   const select = document.getElementById("potencia");
   select.innerHTML = "";
-  const serie = dataBombas.find(s => s.nombre === tipo);
-  if (!serie) return;
-  const mod = serie.modelos.find(m => m.codigo === modelo);
-  if (!mod) return;
   (mod.motor || mod.potencia_hp).forEach(hp => {
     const opt = document.createElement("option");
     opt.value = hp;
@@ -165,14 +216,18 @@ function cargarHP() {
 function mostrarDatos() {
   const tipo = document.getElementById("tipoBomba").value;
   const modelo = document.getElementById("modelo").value;
+  const rpm = document.getElementById("rpm").value;
   const serie = dataBombas.find(s => s.nombre === tipo);
   if (!serie) return;
   const mod = serie.modelos.find(m => m.codigo === modelo);
   if (!mod) return;
 
+  let curvaSeleccionada = mod.curva;
+  if (typeof mod.curva === "object") curvaSeleccionada = mod.curva[rpm];
+
   let html = `<h3>Características ${mod.codigo}</h3>`;
   html += `<b>Serie:</b> ${serie.nombre}<br>`;
-  html += `<b>RPM:</b> ${mod.rpm}<br>`;
+  html += `<b>RPM:</b> ${rpm}<br>`;
   html += `<b>Impulsor (mm):</b> ${mod.diametro_impulsor_mm ? mod.diametro_impulsor_mm.join(", ") : "N/D"}<br>`;
   html += `<b>Caudal (L/min):</b> ${mod.caudal_lmin.join(", ")}<br>`;
   html += `<b>Altura (m):</b> ${mod.altura_m.join(", ")}<br>`;
@@ -180,6 +235,7 @@ function mostrarDatos() {
   html += `<b>NPSH (m):</b> ${mod.npsh_m ? mod.npsh_m.join(", ") : "N/D"}<br>`;
   if (mod.dimensiones)
     html += `<b>Dimensiones (mm):</b> A=${mod.dimensiones.A}, B=${mod.dimensiones.B}, C=${mod.dimensiones.C}, Peso=${mod.dimensiones.peso_kg} kg<br>`;
+  html += `<b>Curva:</b> ${curvaSeleccionada ? curvaSeleccionada : "No disponible"}<br>`;
   document.getElementById("info").innerHTML = html;
 
   mostrarGrafico(mod);
@@ -189,33 +245,31 @@ function mostrarGrafico(mod) {
   const ctx = document.getElementById("grafico").getContext("2d");
   if (chart) chart.destroy();
 
+  const eficiencia = mod.eficiencia || mod.caudal_lmin.map((_, i) => Math.max(60, 85 - i * 5));
+
   chart = new Chart(ctx, {
     type: "line",
     data: {
       labels: mod.caudal_lmin,
       datasets: [
-        {
-          label: "Altura (m)",
-          data: mod.altura_m,
-          borderColor: "#002b55",
-          fill: false,
-          tension: 0.3
-        },
-        {
-          label: "Potencia (HP)",
-          data: mod.potencia_hp,
-          borderColor: "#00b386",
-          fill: false,
-          tension: 0.3
-        }
+        { label: "Altura (m)", data: mod.altura_m, borderColor: "#002b55", yAxisID: "yH", fill: false, tension: 0.3 },
+        { label: "Potencia (HP)", data: mod.potencia_hp, borderColor: "#00b386", yAxisID: "yP", fill: false, tension: 0.3 },
+        { label: "Eficiencia (%)", data: eficiencia, borderColor: "#ff9800", yAxisID: "yE", fill: false, tension: 0.3, borderDash: [5, 5] },
+        ...(mod.npsh_m ? [{ label: "NPSH (m)", data: mod.npsh_m, borderColor: "#e53935", yAxisID: "yN", fill: false, tension: 0.3, borderDash: [2, 4] }] : [])
       ]
     },
     options: {
       responsive: true,
+      interaction: { mode: "index", intersect: false },
+      stacked: false,
       scales: {
         x: { title: { display: true, text: "Caudal (L/min)" } },
-        y: { title: { display: true, text: "Altura / Potencia" } }
-      }
+        yH: { type: "linear", position: "left", title: { display: true, text: "Altura (m)" }, grid: { drawOnChartArea: false } },
+        yP: { type: "linear", position: "right", title: { display: true, text: "Potencia (HP)" }, grid: { drawOnChartArea: false } },
+        yE: { type: "linear", position: "left", min: 50, max: 100, display: true, title: { display: true, text: "Eficiencia (%)" }, grid: { drawOnChartArea: false } },
+        yN: { type: "linear", position: "right", display: !!mod.npsh_m, title: { display: true, text: "NPSH (m)" }, grid: { drawOnChartArea: false } }
+      },
+      plugins: { legend: { position: "top" }, tooltip: { enabled: true } }
     }
   });
 }
