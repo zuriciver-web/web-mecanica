@@ -1,0 +1,255 @@
+{
+  "series": [
+    {
+      "nombre": "CH",
+      "descripcion": "Bombas centrífugas de carcasa horizontal, 1450 o 2900 RPM",
+      "modelos": [
+        {
+          "codigo": "CH-38",
+          "rpm": 2900,
+          "caudal_lmin": [
+            50,
+            100,
+            200,
+            300
+          ],
+          "altura_m": [
+            34,
+            32,
+            28,
+            24
+          ],
+          "potencia_hp": [
+            1.5,
+            2,
+            2.5,
+            3
+          ],
+          "npsh_m": [
+            2.0,
+            2.3,
+            2.6,
+            3.0
+          ],
+          "diametro_impulsor_mm": [
+            120,
+            130,
+            150
+          ],
+          "motor": [
+            "1.5 HP",
+            "2 HP",
+            "3 HP"
+          ],
+          "dimensiones": {
+            "A": 410,
+            "B": 250,
+            "C": 280,
+            "peso_kg": 35
+          },
+          "curva": "ch-38.png"
+        },
+        {
+          "codigo": "CH-45",
+          "rpm": 2900,
+          "caudal_lmin": [
+            100,
+            200,
+            400,
+            600
+          ],
+          "altura_m": [
+            38,
+            35,
+            30,
+            25
+          ],
+          "potencia_hp": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "npsh_m": [
+            2.2,
+            2.5,
+            2.9,
+            3.3
+          ],
+          "diametro_impulsor_mm": [
+            150,
+            170,
+            190
+          ],
+          "motor": [
+            "3 HP",
+            "4 HP",
+            "5 HP"
+          ],
+          "curva": "ch-45.png"
+        }
+      ]
+    },
+    {
+      "nombre": "CB",
+      "descripcion": "Bombas centrífugas de gran caudal con cuerpo rodamiento",
+      "modelos": [
+        {
+          "codigo": "CB-75",
+          "rpm": 1450,
+          "caudal_lmin": [
+            500,
+            1000,
+            1500,
+            2000
+          ],
+          "altura_m": [
+            38,
+            34,
+            28,
+            22
+          ],
+          "potencia_hp": [
+            7.5,
+            10,
+            15,
+            20
+          ],
+          "npsh_m": [
+            2.5,
+            2.8,
+            3.1,
+            3.4
+          ],
+          "diametro_impulsor_mm": [
+            180,
+            200,
+            220
+          ],
+          "curva": "cb-75.png"
+        },
+        {
+          "codigo": "CB-100",
+          "rpm": [
+            1450,
+            2900
+          ],
+          "caudal_lmin": [
+            1000,
+            2000,
+            3000,
+            4000
+          ],
+          "altura_m": [
+            42,
+            38,
+            30,
+            25
+          ],
+          "potencia_hp": [
+            10,
+            15,
+            20,
+            25
+          ],
+          "npsh_m": [
+            3.0,
+            3.3,
+            3.7,
+            4.0
+          ],
+          "diametro_impulsor_mm": [
+            260,
+            280,
+            300
+          ],
+          "curva": {
+            "1450": "cb-100-1450.png",
+            "2900": "cb-100-2900.png"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "AU",
+      "descripcion": "Bombas autocebantes con impulsor semiabierto",
+      "modelos": [
+        {
+          "codigo": "AU-2",
+          "rpm": 2900,
+          "caudal_lmin": [
+            100,
+            200,
+            400,
+            600
+          ],
+          "altura_m": [
+            35,
+            30,
+            25,
+            20
+          ],
+          "potencia_hp": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "curva": "au-2.png"
+        },
+        {
+          "codigo": "AU-3",
+          "rpm": 2900,
+          "caudal_lmin": [
+            200,
+            400,
+            600,
+            800
+          ],
+          "altura_m": [
+            36,
+            32,
+            27,
+            22
+          ],
+          "potencia_hp": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "curva": "au-3.png"
+        },
+        {
+          "codigo": "AU-4",
+          "rpm": 2900,
+          "caudal_lmin": [
+            300,
+            500,
+            800,
+            1000
+          ],
+          "altura_m": [
+            38,
+            34,
+            28,
+            24
+          ],
+          "potencia_hp": [
+            5,
+            6,
+            8,
+            10
+          ],
+          "curva": "au-4.png"
+        }
+      ]
+    }
+  ],
+  "tablas_auxiliares": {
+    "conversiones": "conversiones.png",
+    "perdidas_tuberia": "perdidas.png",
+    "eficiencia_y_potencia": "eficiencia.png",
+    "altitud_y_temperatura": "succion.png"
+  }
+}

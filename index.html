@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSBombas | Selección de Bombas I.M.S.</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --azul: #002b55;
+  --verde: #00b386;
+  --gris: #f4f7f9;
+  --blanco: #fff;
+}
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--gris);
+  margin: 0;
+  color: #222;
+}
+header {
+  background: var(--azul);
+  color: var(--blanco);
+  padding: 20px;
+  text-align: center;
+}
+h1 { margin: 0; font-size: 1.8em; }
+.container {
+  max-width: 1000px;
+  margin: 30px auto;
+  background: var(--blanco);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+button {
+  background: var(--verde);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover { background: #009973; }
+.info {
+  margin-top: 20px;
+  background: #e8f9f1;
+  border-left: 4px solid var(--verde);
+  padding: 15px;
+  border-radius: 10px;
+}
+canvas { margin-top: 30px; }
+footer {
+  background: var(--azul);
+  color: var(--blanco);
+  text-align: center;
+  padding: 15px;
+  margin-top: 40px;
+  font-size: 0.9em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔧 Selección de Bombas Hidráulicas I.M.S.</h1>
+  <p>Simulador técnico de curvas y características</p>
+</header>
+
+<div class="container">
+  <h2>🧭 Selección técnica</h2>
+
+  <label>Tipo de bomba:</label>
+  <select id="tipoBomba"></select>
+
+  <label>Modelo:</label>
+  <select id="modelo"></select>
+
+  <label>Tipo de motor:</label>
+  <select id="tipoMotor">
+    <option value="electrico">Eléctrico</option>
+    <option value="bencinero">Bencinero</option>
+    <option value="diesel">Diésel</option>
+  </select>
+
+  <label>Potencia del motor (HP):</label>
+  <select id="potencia"></select>
+
+  <button onclick="mostrarDatos()">Mostrar características</button>
+
+  <div id="info" class="info"></div>
+  <canvas id="grafico"></canvas>
+</div>
+
+<footer>
+  © 2025 MSBombas | Desarrollo técnico e hidráulico
+</footer>
+
+<script>
+let dataBombas = {};
+let chart = null;
+
+// Cargar el JSON
+fetch("./bombas_ims.json")
+  .then(res => res.json())
+  .then(data => {
+    dataBombas = data.series;
+    cargarTipos();
+  });
+
+// Cargar los tipos de bomba
+function cargarTipos() {
+  const select = document.getElementById("tipoBomba");
+  select.innerHTML = '<option value="">-- Seleccione --</option>';
+  dataBombas.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.nombre;
+    opt.textContent = s.nombre + " (" + s.descripcion + ")";
+    select.appendChild(opt);
+  });
+  select.addEventListener("change", cargarModelos);
+}
+
+function cargarModelos() {
+  const tipo = document.getElementById("tipoBomba").value;
+  const select = document.getElementById("modelo");
+  select.innerHTML = '<option value="">-- Seleccione --</option>';
+  const serie = dataBombas.find(s => s.nombre === tipo);
+  if (!serie) return;
+  serie.modelos.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m.codigo;
+    opt.textContent = m.codigo;
+    select.appendChild(opt);
+  });
+  select.addEventListener("change", cargarHP);
+}
+
+function cargarHP() {
+  const tipo = document.getElementById("tipoBomba").value;
+  const modelo = document.getElementById("modelo").value;
+  const select = document.getElementById("potencia");
+  select.innerHTML = "";
+  const serie = dataBombas.find(s => s.nombre === tipo);
+  if (!serie) return;
+  const mod = serie.modelos.find(m => m.codigo === modelo);
+  if (!mod) return;
+  (mod.motor || mod.potencia_hp).forEach(hp => {
+    const opt = document.createElement("option");
+    opt.value = hp;
+    opt.textContent = hp;
+    select.appendChild(opt);
+  });
+}
+
+function mostrarDatos() {
+  const tipo = document.getElementById("tipoBomba").value;
+  const modelo = document.getElementById("modelo").value;
+  const serie = dataBombas.find(s => s.nombre === tipo);
+  if (!serie) return;
+  const mod = serie.modelos.find(m => m.codigo === modelo);
+  if (!mod) return;
+
+  let html = `<h3>Características ${mod.codigo}</h3>`;
+  html += `<b>Serie:</b> ${serie.nombre}<br>`;
+  html += `<b>RPM:</b> ${mod.rpm}<br>`;
+  html += `<b>Impulsor (mm):</b> ${mod.diametro_impulsor_mm ? mod.diametro_impulsor_mm.join(", ") : "N/D"}<br>`;
+  html += `<b>Caudal (L/min):</b> ${mod.caudal_lmin.join(", ")}<br>`;
+  html += `<b>Altura (m):</b> ${mod.altura_m.join(", ")}<br>`;
+  html += `<b>Potencia (HP):</b> ${mod.potencia_hp.join(", ")}<br>`;
+  html += `<b>NPSH (m):</b> ${mod.npsh_m ? mod.npsh_m.join(", ") : "N/D"}<br>`;
+  if (mod.dimensiones)
+    html += `<b>Dimensiones (mm):</b> A=${mod.dimensiones.A}, B=${mod.dimensiones.B}, C=${mod.dimensiones.C}, Peso=${mod.dimensiones.peso_kg} kg<br>`;
+  document.getElementById("info").innerHTML = html;
+
+  mostrarGrafico(mod);
+}
+
+function mostrarGrafico(mod) {
+  const ctx = document.getElementById("grafico").getContext("2d");
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: mod.caudal_lmin,
+      datasets: [
+        {
+          label: "Altura (m)",
+          data: mod.altura_m,
+          borderColor: "#002b55",
+          fill: false,
+          tension: 0.3
+        },
+        {
+          label: "Potencia (HP)",
+          data: mod.potencia_hp,
+          borderColor: "#00b386",
+          fill: false,
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { title: { display: true, text: "Caudal (L/min)" } },
+        y: { title: { display: true, text: "Altura / Potencia" } }
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
