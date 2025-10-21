@@ -48,6 +48,7 @@
 
     .info {
       margin-top: 1rem;
+      text-align: center;
     }
 
     .info img {
@@ -57,18 +58,20 @@
       background: white;
     }
 
-    #chartContainer {
-      max-width: 900px;
-      margin: 2rem auto;
-      background: #fafafa;
-      border-radius: 12px;
-      padding: 1rem;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    #chartsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
-    canvas {
-      width: 100%;
-      height: 400px;
+    .chartBox {
+      background: #f9f9f9;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
     #modeloActual {
@@ -89,6 +92,21 @@
       width: 100%;
       background-color: #e6e6e6;
       margin-top: 5px;
+    }
+
+    .nota {
+      text-align: center;
+      margin: 20px auto;
+      color: #333;
+      max-width: 800px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .nota span {
+      color: #c00000;
+      font-weight: bold;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -119,8 +137,18 @@
     </div>
   </div>
 
-  <div id="chartContainer">
-    <canvas id="curvaChart"></canvas>
+  <div id="chartsGrid">
+    <div class="chartBox"><canvas id="chartAltura"></canvas></div>
+    <div class="chartBox"><canvas id="chartPotencia"></canvas></div>
+    <div class="chartBox"><canvas id="chartEficiencia"></canvas></div>
+    <div class="chartBox"><canvas id="chartNPSH"></canvas></div>
+  </div>
+
+  <div class="nota">
+    ⚠️ <span>MUY IMPORTANTE:</span><br>
+    Todos los valores corresponden a motores eléctricos (2900 RPM).<br>
+    En motores a combustión (diésel o bencinero), la potencia debe incrementarse en un <b>25%</b>.<br>
+    El modelo <b>CB-100</b> dispone de curvas a <b>1450 y 2900 RPM</b>.
   </div>
 
   <script>
@@ -133,17 +161,16 @@
     const loadingBar = document.getElementById("loadingBar");
 
     let data = {};
-    let chart;
+    let charts = {};
 
     async function loadData() {
       try {
         loadingBar.style.width = "20%";
         const response = await fetch("./bombas.json");
         data = await response.json();
-        loadingBar.style.width = "70%";
-        populateSeries();
         loadingBar.style.width = "100%";
-        setTimeout(() => (loadingBar.style.width = "0%"), 1500);
+        setTimeout(() => (loadingBar.style.width = "0%"), 1000);
+        populateSeries();
       } catch (err) {
         console.error("Error cargando datos:", err);
       }
@@ -184,72 +211,62 @@
         opt.textContent = d.mm + " mm";
         diametroSelect.appendChild(opt);
       });
-      diametroSelect.addEventListener("change", updateChart);
-      updateChart();
+      diametroSelect.addEventListener("change", updateCharts);
+      updateCharts();
     }
 
-    function updateChart() {
+    function updateCharts() {
       const serie = data.series[serieSelect.value];
       const modelo = serie.modelos[modeloSelect.value];
       const diametro = modelo.diametros[diametroSelect.value];
 
-      modeloActual.textContent =
-        `Mostrando curvas para: ${modelo.codigo} Ø${diametro.mm} mm (${modelo.fabricante})`;
+      modeloActual.textContent = `Mostrando curvas para: ${modelo.codigo} Ø${diametro.mm} mm (${modelo.fabricante})`;
 
-      bombaImg.src = modelo.imagen;
+      bombaImg.src = serie.imagen;
       dimensionesDiv.innerHTML = `
         <p><strong>Dimensiones:</strong> A=${modelo.dimensiones.A} mm, 
         B=${modelo.dimensiones.B} mm, C=${modelo.dimensiones.C} mm<br>
-        <strong>Peso:</strong> ${modelo.dimensiones.peso_kg} kg</p>
+        <strong>Peso:</strong> ${modelo.dimensiones.peso_kg} kg<br>
+        <strong>HP recomendado:</strong> ${diametro.hp_recomendado} HP</p>
       `;
 
-      const ctx = document.getElementById("curvaChart").getContext("2d");
-      if (chart) chart.destroy();
+      const curvas = diametro.curvas;
+      renderChart("chartAltura", "Curva de Altura (m)", curvas.caudal_lmin, curvas.altura_m, "#0a2540");
+      renderChart("chartPotencia", "Curva de Potencia (HP)", curvas.caudal_lmin, curvas.potencia_hp, "#007a5e");
+      renderChart("chartEficiencia", "Curva de Eficiencia (%)", curvas.caudal_lmin, curvas.eficiencia_pct, "#00b386");
+      renderChart("chartNPSH", "Curva de NPSH (m)", curvas.caudal_lmin, curvas.npsh_m, "#888888");
+    }
 
-      chart = new Chart(ctx, {
+    function renderChart(canvasId, titulo, caudal, valores, color) {
+      const ctx = document.getElementById(canvasId).getContext("2d");
+      if (charts[canvasId]) charts[canvasId].destroy();
+
+      charts[canvasId] = new Chart(ctx, {
         type: "line",
         data: {
-          labels: diametro.caudal_lmin,
+          labels: caudal,
           datasets: [
             {
-              label: "Altura (m)",
-              data: diametro.altura_m,
-              borderColor: "#0a2540",
-              tension: 0.4
-            },
-            {
-              label: "Potencia (HP)",
-              data: diametro.potencia_hp,
-              borderColor: "#007a5e",
-              tension: 0.4
-            },
-            {
-              label: "Eficiencia (%)",
-              data: diametro.eficiencia_pct,
-              borderColor: "#00b386",
-              tension: 0.4
-            },
-            {
-              label: "NPSH (m)",
-              data: diametro.npsh_m,
-              borderColor: "#888",
-              borderDash: [5, 5],
-              tension: 0.4
+              label: titulo,
+              data: valores,
+              borderColor: color,
+              tension: 0.4,
+              fill: false
             }
           ]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { position: "bottom" },
+            legend: { display: false },
             title: {
               display: true,
-              text: "Curvas de rendimiento (Sistema Métrico)"
+              text: titulo
             }
           },
           scales: {
             x: { title: { display: true, text: "Caudal (L/min)" } },
-            y: { title: { display: true, text: "Valores" } }
+            y: { title: { display: true, text: "Valores" }, beginAtZero: false }
           }
         }
       });
