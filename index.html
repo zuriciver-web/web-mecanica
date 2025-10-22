@@ -130,10 +130,17 @@
     const colors = ["#0a2540", "#007a5e", "#4a90e2", "#f5a623", "#9013fe", "#7ed321"];
 
     async function loadData() {
-      const res = await fetch("./bombas.json");
-      data = await res.json();
-      fillSeries();
-    }
+  try {
+    const res = await fetch("./bombas.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+    console.log("✅ JSON cargado correctamente:", data);
+    fillSeries();
+  } catch (err) {
+    console.error("❌ Error al cargar JSON:", err);
+    alert("Error al cargar bombas.json — revisa consola (F12).");
+  }
+}
 
     function fillSeries() {
       serieSelect.innerHTML = "";
@@ -294,3 +301,4 @@
   </script>
 </body>
 </html>
+
