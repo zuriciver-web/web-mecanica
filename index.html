@@ -12,7 +12,6 @@
       background: #fff;
       color: #0a2540;
     }
-
     header {
       background: linear-gradient(90deg, #0a2540, #007a5e);
       color: white;
@@ -20,7 +19,6 @@
       padding: 1rem 0;
       font-size: 1.6rem;
     }
-
     .container {
       display: flex;
       flex-wrap: wrap;
@@ -28,7 +26,6 @@
       gap: 1rem;
       padding: 1rem;
     }
-
     .card {
       background: #f8f8f8;
       border-radius: 12px;
@@ -36,7 +33,6 @@
       padding: 1rem;
       width: 330px;
     }
-
     select {
       width: 100%;
       padding: 8px;
@@ -44,19 +40,13 @@
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-
-    .info {
-      margin-top: 1rem;
-      text-align: center;
-    }
-
+    .info { text-align: center; }
     .info img {
       width: 100%;
       border-radius: 10px;
       margin-top: 10px;
       background: white;
     }
-
     #chartsGrid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -65,21 +55,18 @@
       max-width: 1200px;
       margin: 0 auto;
     }
-
     .chartBox {
-      background: #f9f9f9;
+      background: #fff;
       border-radius: 10px;
       padding: 1rem;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
-
     #modeloActual {
       text-align: center;
       font-weight: bold;
       color: #007a5e;
       margin-top: 1rem;
     }
-
     .nota {
       text-align: center;
       margin: 25px auto;
@@ -87,30 +74,18 @@
       max-width: 800px;
       line-height: 1.6;
     }
-
-    .nota span {
-      color: #c00000;
-      font-weight: bold;
-    }
+    .nota span { color: #c00000; font-weight: bold; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>MSBombas | Catálogo Técnico</h1>
-  </header>
+  <header><h1>MSBombas | Catálogo Técnico</h1></header>
 
   <div class="container">
     <div class="card">
       <h3>Seleccione parámetros</h3>
-      <label>Serie:</label>
-      <select id="serieSelect"></select>
-
-      <label>Modelo:</label>
-      <select id="modeloSelect"></select>
-
-      <label>Diámetro de impulsor (mm):</label>
-      <select id="diametroSelect"></select>
-
+      <label>Serie:</label><select id="serieSelect"></select>
+      <label>Modelo:</label><select id="modeloSelect"></select>
+      <label>Diámetro de impulsor (mm):</label><select id="diametroSelect"></select>
       <div id="rpmBox" style="display:none;">
         <label>RPM:</label>
         <select id="rpmSelect">
@@ -138,54 +113,48 @@
   <div class="nota">
     ⚠️ <span>MUY IMPORTANTE:</span><br>
     Los valores corresponden a motores eléctricos (2900 RPM).<br>
-    En motores a combustión (diésel o bencinero), la potencia debe incrementarse en un <b>25%</b>.<br>
+    En motores a combustión (diésel o bencinero), la potencia debe incrementarse en un <b>25 %</b>.<br>
     El modelo <b>CB-100</b> permite selección de <b>1450 o 2900 RPM</b> según la curva requerida.
   </div>
 
   <script>
-    const serieSelect = document.getElementById("serieSelect");
-    const modeloSelect = document.getElementById("modeloSelect");
-    const diametroSelect = document.getElementById("diametroSelect");
-    const rpmBox = document.getElementById("rpmBox");
-    const rpmSelect = document.getElementById("rpmSelect");
-    const modeloActual = document.getElementById("modeloActual");
-    const bombaImg = document.getElementById("bombaImg");
-    const dimensionesDiv = document.getElementById("dimensiones");
-
-    let data = {};
-    let charts = {};
-    const colorPalette = [
-      "#0a2540", "#007a5e", "#4a90e2", "#f5a623", "#9013fe", "#7ed321"
-    ];
+    const serieSelect = document.getElementById("serieSelect"),
+          modeloSelect = document.getElementById("modeloSelect"),
+          diametroSelect = document.getElementById("diametroSelect"),
+          rpmBox = document.getElementById("rpmBox"),
+          rpmSelect = document.getElementById("rpmSelect"),
+          modeloActual = document.getElementById("modeloActual"),
+          bombaImg = document.getElementById("bombaImg"),
+          dimensionesDiv = document.getElementById("dimensiones");
+    let data = {}, charts = {};
+    const colors = ["#0a2540", "#007a5e", "#4a90e2", "#f5a623", "#9013fe", "#7ed321"];
 
     async function loadData() {
-      const response = await fetch("./bombas.json");
-      data = await response.json();
-      populateSeries();
+      const res = await fetch("./bombas.json");
+      data = await res.json();
+      fillSeries();
     }
 
-    function populateSeries() {
+    function fillSeries() {
       serieSelect.innerHTML = "";
       data.series.forEach((s, i) => {
-        const opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = s.nombre;
-        serieSelect.appendChild(opt);
+        const o = document.createElement("option");
+        o.value = i; o.textContent = s.nombre;
+        serieSelect.appendChild(o);
       });
-      serieSelect.addEventListener("change", populateModelos);
-      populateModelos();
+      serieSelect.onchange = fillModels;
+      fillModels();
     }
 
-    function populateModelos() {
+    function fillModels() {
       modeloSelect.innerHTML = "";
       const serie = data.series[serieSelect.value];
       serie.modelos.forEach((m, i) => {
-        const opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = m.codigo;
-        modeloSelect.appendChild(opt);
+        const o = document.createElement("option");
+        o.value = i; o.textContent = m.codigo;
+        modeloSelect.appendChild(o);
       });
-      modeloSelect.addEventListener("change", handleModelChange);
+      modeloSelect.onchange = handleModelChange;
       handleModelChange();
     }
 
@@ -193,18 +162,21 @@
       const serie = data.series[serieSelect.value];
       const modelo = serie.modelos[modeloSelect.value];
       rpmBox.style.display = modelo.codigo === "CB-100" ? "block" : "none";
-      populateDiametros();
+      fillDiameters();
     }
 
-    function populateDiametros() {
+    function fillDiameters() {
       diametroSelect.innerHTML = "";
       const serie = data.series[serieSelect.value];
       const modelo = serie.modelos[modeloSelect.value];
-      modelo.diametros.forEach((d, i) => {
-        const opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = d.mm + " mm";
-        diametroSelect.appendChild(opt);
+      const rpmData = modelo.codigo === "CB-100"
+        ? modelo.rpm[rpmSelect.value]
+        : modelo;
+      rpmData.diametros.forEach((d, i) => {
+        const o = document.createElement("option");
+        o.value = i;
+        o.textContent = `${d.mm} mm`;
+        diametroSelect.appendChild(o);
       });
       updateCharts();
     }
@@ -212,142 +184,112 @@
     function updateCharts() {
       const serie = data.series[serieSelect.value];
       const modelo = serie.modelos[modeloSelect.value];
-      const diametro = modelo.diametros[diametroSelect.value];
+      const rpmData = modelo.codigo === "CB-100" ? modelo.rpm[rpmSelect.value] : modelo;
+      const diametro = rpmData.diametros[diametroSelect.value];
       modeloActual.textContent = `${modelo.codigo} (${serie.nombre}) Ø${diametro.mm} mm`;
       bombaImg.src = serie.imagen;
-
-      dimensionesDiv.innerHTML = `
-        <p><strong>Dimensiones:</strong> A=${modelo.dimensiones.A} mm, 
-        B=${modelo.dimensiones.B} mm, C=${modelo.dimensiones.C} mm<br>
-        <strong>Peso:</strong> ${modelo.dimensiones.peso_kg} kg</p>`;
-
-      renderCharts(modelo);
+      const dim = rpmData.dimensiones;
+      dimensionesDiv.innerHTML = `<p><strong>Dimensiones:</strong> A=${dim.A} mm, B=${dim.B} mm, C=${dim.C} mm<br><strong>Peso:</strong> ${dim.peso_kg} kg</p>`;
+      renderAll(rpmData);
     }
 
-    function renderCharts(modelo) {
-      destroyCharts();
-      renderAlturaPotencia(modelo);
-      renderEficienciaNPSH(modelo);
+    function renderAll(m) {
+      Object.values(charts).forEach(c => c.destroy());
+      renderChart("chartAltura", "Curva de Altura (mca)", m, "altura_m", "Altura (m)");
+      renderChart("chartPotencia", "Curva de Potencia (HP)", m, "potencia_hp", "Potencia (HP)");
+      renderEffNPSH(m);
     }
 
-    function destroyCharts() {
-      for (let key in charts) {
-        if (charts[key]) charts[key].destroy();
-      }
-    }
-
-    function renderAlturaPotencia(modelo) {
-      const ctxH = document.getElementById("chartAltura").getContext("2d");
-      const ctxP = document.getElementById("chartPotencia").getContext("2d");
-
-      const datasetsH = modelo.diametros.map((d, i) => ({
-        label: `Ø${d.mm} mm`,
-        data: d.curvas.altura_m,
-        borderColor: colorPalette[i % colorPalette.length],
-        tension: 0.4,
-        fill: false
-      }));
-
-      const datasetsP = modelo.diametros.map((d, i) => ({
-        label: `Ø${d.mm} mm`,
-        data: d.curvas.potencia_hp,
-        borderColor: colorPalette[(i + 2) % colorPalette.length],
-        tension: 0.4,
-        fill: false
-      }));
-
-      charts.chartAltura = new Chart(ctxH, {
+    function renderChart(id, title, modelo, field, yLabel) {
+      const ctx = document.getElementById(id).getContext("2d");
+      charts[id] = new Chart(ctx, {
         type: "line",
         data: {
           labels: modelo.diametros[0].curvas.caudal_lmin,
-          datasets: datasetsH
+          datasets: modelo.diametros.map((d, i) => ({
+            label: `Ø${d.mm} mm`,
+            data: d.curvas[field],
+            borderColor: colors[i % colors.length],
+            tension: 0.4,
+            fill: false
+          }))
         },
         options: {
-          plugins: { title: { display: true, text: "Curva de Altura (mca)" } },
-          responsive: true,
-          interaction: { mode: "nearest" },
+          plugins: {
+            title: { display: true, text: title },
+            tooltip: {
+              enabled: true,
+              callbacks: {
+                label: (ctx) => {
+                  const q = ctx.label, v = ctx.formattedValue;
+                  const unit = field === "potencia_hp" ? " HP" : " m";
+                  return `Caudal ${q} L/min → ${v}${unit}`;
+                }
+              }
+            },
+            legend: { position: "top" }
+          },
+          interaction: { mode: "nearest", intersect: false },
           scales: {
-            x: { title: { display: true, text: "Caudal (L/min)" } },
-            y: { title: { display: true, text: "Altura (m)" } }
-          }
-        }
-      });
-
-      charts.chartPotencia = new Chart(ctxP, {
-        type: "line",
-        data: {
-          labels: modelo.diametros[0].curvas.caudal_lmin,
-          datasets: datasetsP
-        },
-        options: {
-          plugins: { title: { display: true, text: "Curva de Potencia (HP)" } },
-          responsive: true,
-          interaction: { mode: "nearest" },
-          scales: {
-            x: { title: { display: true, text: "Caudal (L/min)" } },
-            y: { title: { display: true, text: "Potencia (HP)" } }
+            x: { grid: { color: "#e0f0ff" }, title: { display: true, text: "Caudal (L/min)" } },
+            y: { grid: { color: "#e0f0ff" }, title: { display: true, text: yLabel } }
           }
         }
       });
     }
 
-    function renderEficienciaNPSH(modelo) {
-      const ctxE = document.getElementById("chartEficiencia").getContext("2d");
-      const ctxN = document.getElementById("chartNPSH").getContext("2d");
-
-      charts.chartEficiencia = new Chart(ctxE, {
+    function renderEffNPSH(m) {
+      const eCtx = document.getElementById("chartEficiencia").getContext("2d");
+      const nCtx = document.getElementById("chartNPSH").getContext("2d");
+      charts.chartEficiencia = new Chart(eCtx, {
         type: "line",
         data: {
-          labels: [40, 60, 80, 100],
-          datasets: [
-            {
-              label: "Eficiencia estimada",
-              data: [70, 78, 84, 80],
-              borderColor: "#00b386",
-              tension: 0.4,
-              fill: false
-            }
-          ]
+          labels: [40,60,80,100],
+          datasets: [{
+            label: "Eficiencia (%)",
+            data: m.eficiencia || [70,78,84,80],
+            borderColor: "#00b386",
+            tension: 0.4,
+            fill: false
+          }]
         },
         options: {
           plugins: { title: { display: true, text: "Curva de Eficiencia (%)" } },
-          responsive: true,
           scales: {
-            x: { title: { display: true, text: "Caudal relativo (%)" } },
-            y: { title: { display: true, text: "Eficiencia (%)" } }
+            x: { grid: { color: "#e0f0ff" }, title: { display: true, text: "Caudal relativo (%)" } },
+            y: { grid: { color: "#e0f0ff" }, title: { display: true, text: "Eficiencia (%)" } }
           }
         }
       });
-
-      charts.chartNPSH = new Chart(ctxN, {
+      charts.chartNPSH = new Chart(nCtx, {
         type: "line",
         data: {
-          labels: modelo.npsh.caudal_m3h,
-          datasets: [
-            {
-              label: "NPSH (mca)",
-              data: modelo.npsh.npsh_m,
-              borderColor: "#888888",
-              tension: 0.4,
-              fill: false
-            }
-          ]
+          labels: m.npsh.caudal_lmin,
+          datasets: [{
+            label: "NPSH (mca)",
+            data: m.npsh.npsh_m,
+            borderColor: "#888",
+            tension: 0.4,
+            fill: false
+          }]
         },
         options: {
-          plugins: { title: { display: true, text: "Curva de NPSH (mca)" } },
-          responsive: true,
+          plugins: {
+            title: { display: true, text: "Curva de NPSH (mca)" },
+            tooltip: { callbacks: { label: c => `Caudal ${c.label} L/min → ${c.formattedValue} m` } }
+          },
           scales: {
-            x: { title: { display: true, text: "Caudal (m³/h)" } },
-            y: { title: { display: true, text: "NPSH (m)" } }
+            x: { grid: { color: "#e0f0ff" }, title: { display: true, text: "Caudal (L/min)" } },
+            y: { grid: { color: "#e0f0ff" }, title: { display: true, text: "NPSH (m)" } }
           }
         }
       });
     }
 
-    serieSelect.addEventListener("change", populateModelos);
-    modeloSelect.addEventListener("change", handleModelChange);
-    diametroSelect.addEventListener("change", updateCharts);
-    rpmSelect.addEventListener("change", updateCharts);
+    serieSelect.onchange = fillModels;
+    modeloSelect.onchange = handleModelChange;
+    diametroSelect.onchange = updateCharts;
+    rpmSelect.onchange = updateCharts;
     loadData();
   </script>
 </body>
