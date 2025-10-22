@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <title>MSBombas | Catálogo Técnico</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -19,30 +18,29 @@
       color: white;
       text-align: center;
       padding: 1rem 0;
-      font-size: 1.5rem;
-      letter-spacing: 1px;
+      font-size: 1.6rem;
     }
 
     .container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
+      gap: 1rem;
       padding: 1rem;
-      gap: 1.5rem;
     }
 
     .card {
       background: #f8f8f8;
-      border-radius: 16px;
+      border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       padding: 1rem;
-      width: 350px;
+      width: 330px;
     }
 
     select {
       width: 100%;
       padding: 8px;
-      margin-top: 6px;
+      margin-top: 5px;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
@@ -82,32 +80,17 @@
       margin-top: 1rem;
     }
 
-    #loadingBar {
-      width: 0%;
-      height: 6px;
-      background-color: #007a5e;
-      transition: width 1s;
-    }
-
-    .loading-container {
-      width: 100%;
-      background-color: #e6e6e6;
-      margin-top: 5px;
-    }
-
     .nota {
       text-align: center;
-      margin: 20px auto;
+      margin: 25px auto;
       color: #333;
       max-width: 800px;
       line-height: 1.6;
-      font-size: 15px;
     }
 
     .nota span {
       color: #c00000;
       font-weight: bold;
-      font-size: 16px;
     }
   </style>
 </head>
@@ -127,12 +110,19 @@
 
       <label>Diámetro de impulsor (mm):</label>
       <select id="diametroSelect"></select>
+
+      <div id="rpmBox" style="display:none;">
+        <label>RPM:</label>
+        <select id="rpmSelect">
+          <option value="1450">1450 RPM</option>
+          <option value="2900">2900 RPM</option>
+        </select>
+      </div>
     </div>
 
     <div class="card info">
       <h3>Información técnica</h3>
       <div id="modeloActual">Seleccione una bomba...</div>
-      <div class="loading-container"><div id="loadingBar"></div></div>
       <img id="bombaImg" src="" alt="Imagen de bomba" />
       <div id="dimensiones"></div>
     </div>
@@ -147,34 +137,27 @@
 
   <div class="nota">
     ⚠️ <span>MUY IMPORTANTE:</span><br>
-    Todos los valores corresponden a motores eléctricos (2900 RPM).<br>
+    Los valores corresponden a motores eléctricos (2900 RPM).<br>
     En motores a combustión (diésel o bencinero), la potencia debe incrementarse en un <b>25%</b>.<br>
-    El modelo <b>CB-100</b> dispone de curvas a <b>1450 y 2900 RPM</b>.
+    El modelo <b>CB-100</b> permite selección de <b>1450 o 2900 RPM</b> según la curva requerida.
   </div>
 
   <script>
     const serieSelect = document.getElementById("serieSelect");
     const modeloSelect = document.getElementById("modeloSelect");
     const diametroSelect = document.getElementById("diametroSelect");
+    const rpmBox = document.getElementById("rpmBox");
+    const rpmSelect = document.getElementById("rpmSelect");
     const modeloActual = document.getElementById("modeloActual");
     const bombaImg = document.getElementById("bombaImg");
     const dimensionesDiv = document.getElementById("dimensiones");
-    const loadingBar = document.getElementById("loadingBar");
-
     let data = {};
     let charts = {};
 
     async function loadData() {
-      try {
-        loadingBar.style.width = "20%";
-        const response = await fetch("./bombas.json");
-        data = await response.json();
-        loadingBar.style.width = "100%";
-        setTimeout(() => (loadingBar.style.width = "0%"), 1000);
-        populateSeries();
-      } catch (err) {
-        console.error("Error cargando datos:", err);
-      }
+      const response = await fetch("./bombas.json");
+      data = await response.json();
+      populateSeries();
     }
 
     function populateSeries() {
@@ -198,7 +181,14 @@
         opt.textContent = m.codigo;
         modeloSelect.appendChild(opt);
       });
-      modeloSelect.addEventListener("change", populateDiametros);
+      modeloSelect.addEventListener("change", handleModelChange);
+      handleModelChange();
+    }
+
+    function handleModelChange() {
+      const serie = data.series[serieSelect.value];
+      const modelo = serie.modelos[modeloSelect.value];
+      rpmBox.style.display = modelo.codigo === "CB-100" ? "block" : "none";
       populateDiametros();
     }
 
@@ -212,7 +202,6 @@
         opt.textContent = d.mm + " mm";
         diametroSelect.appendChild(opt);
       });
-      diametroSelect.addEventListener("change", updateCharts);
       updateCharts();
     }
 
@@ -220,61 +209,137 @@
       const serie = data.series[serieSelect.value];
       const modelo = serie.modelos[modeloSelect.value];
       const diametro = modelo.diametros[diametroSelect.value];
-
-      modeloActual.textContent = `Mostrando curvas para: ${modelo.codigo} Ø${diametro.mm} mm (${modelo.fabricante})`;
-
+      modeloActual.textContent = `${modelo.codigo} (${serie.nombre}) Ø${diametro.mm} mm`;
       bombaImg.src = serie.imagen;
-      dimensionesDiv.innerHTML = `
-        <p><strong>Dimensiones:</strong> A=${modelo.dimensiones.A} mm, 
-        B=${modelo.dimensiones.B} mm, C=${modelo.dimensiones.C} mm<br>
-        <strong>Peso:</strong> ${modelo.dimensiones.peso_kg} kg<br>
-        <strong>HP recomendado:</strong> ${diametro.hp_recomendado} HP</p>
-      `;
 
-      const curvas = diametro.curvas;
-      renderChart("chartAltura", "Curva de Altura (m)", curvas.caudal_lmin, curvas.altura_m, "#0a2540");
-      renderChart("chartPotencia", "Curva de Potencia (HP)", curvas.caudal_lmin, curvas.potencia_hp, "#007a5e");
-      renderChart("chartEficiencia", "Curva de Eficiencia (%)", curvas.caudal_lmin, curvas.eficiencia_pct, "#00b386");
-      renderChart("chartNPSH", "Curva de NPSH (m)", curvas.caudal_lmin, curvas.npsh_m, "#888888");
+      dimensionesDiv.innerHTML = `
+        <p><strong>Dimensiones:</strong> A=${modelo.dimensiones.A} mm, B=${modelo.dimensiones.B} mm, C=${modelo.dimensiones.C} mm<br>
+        <strong>Peso:</strong> ${modelo.dimensiones.peso_kg} kg</p>`;
+
+      renderMultiCharts(modelo);
     }
 
-    function renderChart(canvasId, titulo, caudal, valores, color) {
-      const ctx = document.getElementById(canvasId).getContext("2d");
-      if (charts[canvasId]) charts[canvasId].destroy();
+    function renderMultiCharts(modelo) {
+      destroyCharts();
+      renderAlturaPotencia(modelo);
+      renderNPSH(modelo);
+    }
 
-      charts[canvasId] = new Chart(ctx, {
+    function destroyCharts() {
+      for (let key in charts) {
+        if (charts[key]) charts[key].destroy();
+      }
+    }
+
+    function renderAlturaPotencia(modelo) {
+      const ctxAltura = document.getElementById("chartAltura").getContext("2d");
+      const ctxPotencia = document.getElementById("chartPotencia").getContext("2d");
+
+      const datasetsH = modelo.diametros.map((d) => ({
+        label: `Ø${d.mm} mm`,
+        data: d.curvas.altura_m,
+        borderColor: "#0a2540",
+        tension: 0.4,
+        fill: false
+      }));
+
+      const datasetsN = modelo.diametros.map((d) => ({
+        label: `Ø${d.mm} mm`,
+        data: d.curvas.potencia_hp,
+        borderColor: "#007a5e",
+        tension: 0.4,
+        fill: false
+      }));
+
+      charts.chartAltura = new Chart(ctxAltura, {
         type: "line",
         data: {
-          labels: caudal,
+          labels: modelo.diametros[0].curvas.caudal_lmin,
+          datasets: datasetsH
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: "Curva de Altura (mca)" } },
+          scales: {
+            x: { title: { display: true, text: "Caudal (L/min)" } },
+            y: { title: { display: true, text: "Altura (m)" } }
+          }
+        }
+      });
+
+      charts.chartPotencia = new Chart(ctxPotencia, {
+        type: "line",
+        data: {
+          labels: modelo.diametros[0].curvas.caudal_lmin,
+          datasets: datasetsN
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: "Curva de Potencia (HP)" } },
+          scales: {
+            x: { title: { display: true, text: "Caudal (L/min)" } },
+            y: { title: { display: true, text: "Potencia (HP)" } }
+          }
+        }
+      });
+    }
+
+    function renderNPSH(modelo) {
+      const ctxEfic = document.getElementById("chartEficiencia").getContext("2d");
+      const ctxNPSH = document.getElementById("chartNPSH").getContext("2d");
+
+      charts.chartEficiencia = new Chart(ctxEfic, {
+        type: "line",
+        data: {
+          labels: [40, 60, 80, 100],
           datasets: [
             {
-              label: titulo,
-              data: valores,
-              borderColor: color,
+              label: "Eficiencia estimada",
+              data: [70, 78, 84, 80],
+              borderColor: "#00b386",
               tension: 0.4,
               fill: false
             }
           ]
         },
         options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            title: {
-              display: true,
-              text: titulo
-            }
-          },
+          plugins: { title: { display: true, text: "Curva de Eficiencia (%)" } },
           scales: {
-            x: { title: { display: true, text: "Caudal (L/min)" } },
-            y: { title: { display: true, text: "Valores" }, beginAtZero: false }
+            x: { title: { display: true, text: "Caudal relativo (%)" } },
+            y: { title: { display: true, text: "Eficiencia (%)" } }
+          }
+        }
+      });
+
+      charts.chartNPSH = new Chart(ctxNPSH, {
+        type: "line",
+        data: {
+          labels: modelo.npsh.caudal_m3h,
+          datasets: [
+            {
+              label: "NPSH (mca)",
+              data: modelo.npsh.npsh_m,
+              borderColor: "#888888",
+              tension: 0.4,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          plugins: { title: { display: true, text: "Curva de NPSH (mca)" } },
+          scales: {
+            x: { title: { display: true, text: "Caudal (m³/h)" } },
+            y: { title: { display: true, text: "NPSH (m)" } }
           }
         }
       });
     }
 
+    serieSelect.addEventListener("change", populateModelos);
+    modeloSelect.addEventListener("change", handleModelChange);
+    diametroSelect.addEventListener("change", updateCharts);
+    rpmSelect.addEventListener("change", updateCharts);
     loadData();
   </script>
 </body>
 </html>
-
