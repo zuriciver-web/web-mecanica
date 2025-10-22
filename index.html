@@ -115,7 +115,7 @@
         <label>RPM:</label>
         <select id="rpmSelect">
           <option value="1450">1450 RPM</option>
-          <option value="2900">2900 RPM</option>
+          <option value="2900" selected>2900 RPM</option>
         </select>
       </div>
     </div>
@@ -151,8 +151,12 @@
     const modeloActual = document.getElementById("modeloActual");
     const bombaImg = document.getElementById("bombaImg");
     const dimensionesDiv = document.getElementById("dimensiones");
+
     let data = {};
     let charts = {};
+    const colorPalette = [
+      "#0a2540", "#007a5e", "#4a90e2", "#f5a623", "#9013fe", "#7ed321"
+    ];
 
     async function loadData() {
       const response = await fetch("./bombas.json");
@@ -213,16 +217,17 @@
       bombaImg.src = serie.imagen;
 
       dimensionesDiv.innerHTML = `
-        <p><strong>Dimensiones:</strong> A=${modelo.dimensiones.A} mm, B=${modelo.dimensiones.B} mm, C=${modelo.dimensiones.C} mm<br>
+        <p><strong>Dimensiones:</strong> A=${modelo.dimensiones.A} mm, 
+        B=${modelo.dimensiones.B} mm, C=${modelo.dimensiones.C} mm<br>
         <strong>Peso:</strong> ${modelo.dimensiones.peso_kg} kg</p>`;
 
-      renderMultiCharts(modelo);
+      renderCharts(modelo);
     }
 
-    function renderMultiCharts(modelo) {
+    function renderCharts(modelo) {
       destroyCharts();
       renderAlturaPotencia(modelo);
-      renderNPSH(modelo);
+      renderEficienciaNPSH(modelo);
     }
 
     function destroyCharts() {
@@ -232,34 +237,35 @@
     }
 
     function renderAlturaPotencia(modelo) {
-      const ctxAltura = document.getElementById("chartAltura").getContext("2d");
-      const ctxPotencia = document.getElementById("chartPotencia").getContext("2d");
+      const ctxH = document.getElementById("chartAltura").getContext("2d");
+      const ctxP = document.getElementById("chartPotencia").getContext("2d");
 
-      const datasetsH = modelo.diametros.map((d) => ({
+      const datasetsH = modelo.diametros.map((d, i) => ({
         label: `Ø${d.mm} mm`,
         data: d.curvas.altura_m,
-        borderColor: "#0a2540",
+        borderColor: colorPalette[i % colorPalette.length],
         tension: 0.4,
         fill: false
       }));
 
-      const datasetsN = modelo.diametros.map((d) => ({
+      const datasetsP = modelo.diametros.map((d, i) => ({
         label: `Ø${d.mm} mm`,
         data: d.curvas.potencia_hp,
-        borderColor: "#007a5e",
+        borderColor: colorPalette[(i + 2) % colorPalette.length],
         tension: 0.4,
         fill: false
       }));
 
-      charts.chartAltura = new Chart(ctxAltura, {
+      charts.chartAltura = new Chart(ctxH, {
         type: "line",
         data: {
           labels: modelo.diametros[0].curvas.caudal_lmin,
           datasets: datasetsH
         },
         options: {
-          responsive: true,
           plugins: { title: { display: true, text: "Curva de Altura (mca)" } },
+          responsive: true,
+          interaction: { mode: "nearest" },
           scales: {
             x: { title: { display: true, text: "Caudal (L/min)" } },
             y: { title: { display: true, text: "Altura (m)" } }
@@ -267,15 +273,16 @@
         }
       });
 
-      charts.chartPotencia = new Chart(ctxPotencia, {
+      charts.chartPotencia = new Chart(ctxP, {
         type: "line",
         data: {
           labels: modelo.diametros[0].curvas.caudal_lmin,
-          datasets: datasetsN
+          datasets: datasetsP
         },
         options: {
-          responsive: true,
           plugins: { title: { display: true, text: "Curva de Potencia (HP)" } },
+          responsive: true,
+          interaction: { mode: "nearest" },
           scales: {
             x: { title: { display: true, text: "Caudal (L/min)" } },
             y: { title: { display: true, text: "Potencia (HP)" } }
@@ -284,11 +291,11 @@
       });
     }
 
-    function renderNPSH(modelo) {
-      const ctxEfic = document.getElementById("chartEficiencia").getContext("2d");
-      const ctxNPSH = document.getElementById("chartNPSH").getContext("2d");
+    function renderEficienciaNPSH(modelo) {
+      const ctxE = document.getElementById("chartEficiencia").getContext("2d");
+      const ctxN = document.getElementById("chartNPSH").getContext("2d");
 
-      charts.chartEficiencia = new Chart(ctxEfic, {
+      charts.chartEficiencia = new Chart(ctxE, {
         type: "line",
         data: {
           labels: [40, 60, 80, 100],
@@ -304,6 +311,7 @@
         },
         options: {
           plugins: { title: { display: true, text: "Curva de Eficiencia (%)" } },
+          responsive: true,
           scales: {
             x: { title: { display: true, text: "Caudal relativo (%)" } },
             y: { title: { display: true, text: "Eficiencia (%)" } }
@@ -311,7 +319,7 @@
         }
       });
 
-      charts.chartNPSH = new Chart(ctxNPSH, {
+      charts.chartNPSH = new Chart(ctxN, {
         type: "line",
         data: {
           labels: modelo.npsh.caudal_m3h,
@@ -327,6 +335,7 @@
         },
         options: {
           plugins: { title: { display: true, text: "Curva de NPSH (mca)" } },
+          responsive: true,
           scales: {
             x: { title: { display: true, text: "Caudal (m³/h)" } },
             y: { title: { display: true, text: "NPSH (m)" } }
