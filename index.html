@@ -3,340 +3,214 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MSbombas.cl - Curvas de Bombas</title>
-  <link rel="icon" type="image/x-icon" href="img/favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Curvas de Bombas - MSbombas.cl</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: Arial, sans-serif;
       margin: 0;
-      background-color: #ffffff;
-      color: #0a2540;
-      text-align: center;
+      background: linear-gradient(to right, #005baa, #00b36b);
+      color: #fff;
+      min-height: 100vh;
     }
-
     header {
-      background: linear-gradient(90deg, #0a2540 0%, #35b276 100%);
-      color: white;
-      padding: 2rem 1rem;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      font-size: 2rem;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.2);
     }
-
-    header h1 {
-      margin: 0;
-      font-size: 2.8rem;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    header h2 {
-      margin: 0.3rem 0 0 0;
-      font-size: 1.4rem;
-      font-weight: 400;
-      color: #f0f0f0;
-    }
-
-    .selector-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      margin: 25px 0;
-    }
-
-    select {
-      padding: 0.6rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 1rem;
-      background-color: #f8f9fb;
-      transition: all 0.2s ease-in-out;
-    }
-
-    select:hover {
-      border-color: #35b276;
-      box-shadow: 0 0 4px rgba(53, 178, 118, 0.4);
-    }
-
-    #imagen-bomba {
-      max-width: 300px;
-      margin: 20px auto;
-      display: block;
-    }
-
-    .descripcion-modelo {
-      font-size: 1rem;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    .grafico-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 20px;
-      justify-items: center;
-      padding: 0 20px;
-    }
-
-    canvas {
-      background: #f8f9fb;
-      border-radius: 12px;
-      padding: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 600px;
-      height: 320px;
-    }
-
-    .nota {
-      color: #d80000;
-      font-weight: 600;
-      margin: 20px auto;
-      background: #fff5f5;
-      border-radius: 8px;
-      padding: 10px;
+    .selector {
+      background: #fff;
+      color: #000;
+      border-radius: 10px;
       width: 90%;
-      max-width: 700px;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      text-align: center;
     }
-
+    select {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .plot {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      color: #000;
+    }
     footer {
-      background-color: #0a2540;
-      color: #ffffff;
-      padding: 15px;
+      text-align: center;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
       font-size: 0.9rem;
-      margin-top: 30px;
     }
   </style>
 </head>
-
 <body>
-  <header>
-    <h1>MSbombas.cl</h1>
-    <h2>Curvas de Bombas</h2>
-  </header>
+  <header>CURVAS DE BOMBAS - MSbombas.cl</header>
 
-  <div class="selector-container">
-    <select id="serieSelect">
-      <option value="">Seleccione Serie</option>
-    </select>
+  <div class="selector">
+    <label>Serie:</label>
+    <select id="serieSelect"></select>
 
-    <select id="modeloSelect" disabled>
-      <option value="">Seleccione Modelo</option>
-    </select>
+    <label>Modelo:</label>
+    <select id="modeloSelect"></select>
 
-    <select id="diametroSelect" disabled>
-      <option value="">Seleccione Diámetro</option>
-    </select>
-
-    <select id="rpmSelect" style="display:none;">
-      <option value="1450">1450 RPM</option>
-      <option value="2900">2900 RPM</option>
-    </select>
+    <div id="rpmContainer" style="display:none;">
+      <label>RPM:</label>
+      <select id="rpmSelect">
+        <option value="1450">1450</option>
+        <option value="2900">2900</option>
+      </select>
+    </div>
   </div>
 
-  <img id="imagen-bomba" src="" alt="Imagen de bomba">
-  <p id="descripcion-modelo" class="descripcion-modelo"></p>
-
-  <div class="grafico-grid">
-    <canvas id="graficoAltura"></canvas>
-    <canvas id="graficoPotencia"></canvas>
-    <canvas id="graficoNPSH"></canvas>
-    <canvas id="graficoEficiencia"></canvas>
+  <div class="grid">
+    <div id="graficoAltura" class="plot"></div>
+    <div id="graficoPotencia" class="plot"></div>
+    <div id="graficoNPSH" class="plot"></div>
+    <div id="graficoEficiencia" class="plot"></div>
   </div>
 
-  <p class="nota">
-    ⚠️ Muy Importante: Si el motor es a combustión (diésel o bencinero), la potencia debe aumentarse en un 25%.
-  </p>
+  <footer>Muy importante: si el motor es a combustión (diésel o bencinero), la potencia debe incrementarse un 25%.</footer>
+
   <script>
-    let data;
-    let charts = {};
+    const jsonURL = "https://zuriciver-web.github.io/web-mecanica/bombas.json";
 
-    async function cargarDatos() {
-      try {
-        const response = await fetch("bombas.json");
-        data = await response.json();
-        inicializarSelectores();
-      } catch (error) {
-        console.error("Error cargando bombas.json", error);
-      }
-    }
+    let dataGlobal;
 
-    function inicializarSelectores() {
-      const serieSelect = document.getElementById("serieSelect");
-      data.series.forEach(serie => {
+    fetch(jsonURL)
+      .then(res => res.json())
+      .then(data => {
+        dataGlobal = data.series;
+        cargarSeries();
+      });
+
+    const serieSelect = document.getElementById("serieSelect");
+    const modeloSelect = document.getElementById("modeloSelect");
+    const rpmContainer = document.getElementById("rpmContainer");
+    const rpmSelect = document.getElementById("rpmSelect");
+
+    function cargarSeries() {
+      serieSelect.innerHTML = '<option value="">Seleccione Serie</option>';
+      dataGlobal.forEach(s => {
         const opt = document.createElement("option");
-        opt.value = serie.nombre;
-        opt.textContent = serie.nombre;
+        opt.value = s.nombre;
+        opt.textContent = s.nombre;
         serieSelect.appendChild(opt);
       });
-
-      serieSelect.addEventListener("change", actualizarModelos);
-      document.getElementById("modeloSelect").addEventListener("change", actualizarDiametros);
-      document.getElementById("diametroSelect").addEventListener("change", actualizarGraficos);
-      document.getElementById("rpmSelect").addEventListener("change", actualizarGraficos);
     }
 
-    function actualizarModelos() {
-      const serieNombre = document.getElementById("serieSelect").value;
-      const serie = data.series.find(s => s.nombre === serieNombre);
-      const modeloSelect = document.getElementById("modeloSelect");
-      const img = document.getElementById("imagen-bomba");
-      const descripcion = document.getElementById("descripcion-modelo");
-
+    serieSelect.addEventListener("change", () => {
+      const serie = dataGlobal.find(s => s.nombre === serieSelect.value);
       modeloSelect.innerHTML = '<option value="">Seleccione Modelo</option>';
-      descripcion.textContent = "";
-      img.src = "";
+      if (serie) {
+        serie.modelos.forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = m.codigo;
+          opt.textContent = m.codigo;
+          modeloSelect.appendChild(opt);
+        });
+      }
+      limpiarGraficos();
+    });
 
-      if (!serie) return;
-      serie.modelos.forEach(modelo => {
-        const opt = document.createElement("option");
-        opt.value = modelo.codigo;
-        opt.textContent = modelo.codigo;
-        modeloSelect.appendChild(opt);
-      });
+    modeloSelect.addEventListener("change", () => {
+      const serie = dataGlobal.find(s => s.nombre === serieSelect.value);
+      const modelo = serie.modelos.find(m => m.codigo === modeloSelect.value);
+      if (!modelo) return;
 
-      document.getElementById("modeloSelect").disabled = false;
-      img.src = serie.imagen;
-      descripcion.textContent = serie.descripcion || "";
-      document.getElementById("diametroSelect").disabled = true;
-    }
-
-    function actualizarDiametros() {
-      const serieNombre = document.getElementById("serieSelect").value;
-      const modeloCodigo = document.getElementById("modeloSelect").value;
-      const serie = data.series.find(s => s.nombre === serieNombre);
-      const modelo = serie.modelos.find(m => m.codigo === modeloCodigo);
-      const diametroSelect = document.getElementById("diametroSelect");
-      const rpmSelect = document.getElementById("rpmSelect");
-
-      diametroSelect.innerHTML = '<option value="">Seleccione Diámetro</option>';
-      rpmSelect.style.display = "none";
-
-      let modeloActivo = modelo;
-      if (modelo.rpm && !Array.isArray(modelo.rpm)) {
-        rpmSelect.style.display = "inline-block";
-        const rpmDisponible = Object.keys(modelo.rpm);
-        rpmSelect.innerHTML = rpmDisponible.map(v => `<option value="${v}">${v} RPM</option>`).join("");
-        const rpmSeleccionada = rpmDisponible.includes("2900") ? "2900" : rpmDisponible[0];
-        rpmSelect.value = rpmSeleccionada;
-        modeloActivo = modelo.rpm[rpmSeleccionada];
+      if (modelo.codigo === "CB-100") {
+        rpmContainer.style.display = "block";
+      } else {
+        rpmContainer.style.display = "none";
       }
 
-      if (!modeloActivo.diametros) {
-        mostrarMensaje("No hay curvas disponibles para este modelo.");
-        return;
-      }
+      dibujarGraficos(modelo);
+    });
 
-      modeloActivo.diametros.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d.mm;
-        opt.textContent = d.mm + " mm";
-        diametroSelect.appendChild(opt);
-      });
-
-      document.getElementById("diametroSelect").disabled = false;
-    }
-
-    function actualizarGraficos() {
-      const serieNombre = document.getElementById("serieSelect").value;
-      const modeloCodigo = document.getElementById("modeloSelect").value;
-      const serie = data.series.find(s => s.nombre === serieNombre);
-      const modelo = serie.modelos.find(m => m.codigo === modeloCodigo);
-      const rpmSelect = document.getElementById("rpmSelect");
-      const rpm = modelo.rpm ? rpmSelect.value : modelo.rpm;
-      let modeloActivo = modelo.rpm && !Array.isArray(modelo.rpm) ? modelo.rpm[rpm] : modelo;
-
-      if (!modeloActivo || !modeloActivo.diametros) {
-        mostrarMensaje("No hay curvas disponibles para esta configuración.");
-        limpiarGraficos();
-        return;
-      }
-
-      const colores = [
-        'rgba(53, 178, 118, 1)',
-        'rgba(54, 162, 235, 1)',
-        'rgba(255, 159, 64, 1)',
-        'rgba(255, 99, 132, 1)',
-        'rgba(153, 102, 255, 1)'
-      ];
-
-      const datasetsAltura = modeloActivo.diametros.map((d, i) => ({
-        label: `Ø ${d.mm} mm`,
-        data: d.curvas.caudal_lmin.map((c, j) => ({ x: c, y: d.curvas.altura_m[j] })),
-        borderColor: colores[i % colores.length],
-        fill: false,
-        tension: 0.4
-      }));
-
-      const datasetsPotencia = modeloActivo.diametros.map((d, i) => ({
-        label: `Ø ${d.mm} mm`,
-        data: d.curvas.caudal_lmin.map((c, j) => ({ x: c, y: d.curvas.potencia_hp[j] })),
-        borderColor: colores[i % colores.length],
-        fill: false,
-        tension: 0.4
-      }));
-
-      const datasetNPSH = [{
-        label: 'NPSH (m)',
-        data: modeloActivo.npsh.caudal_lmin.map((c, i) => ({ x: c, y: modeloActivo.npsh.npsh_m[i] })),
-        borderColor: 'rgba(255, 206, 86, 1)',
-        fill: false,
-        tension: 0.4
-      }];
-
-      const datasetEficiencia = [{
-        label: 'Eficiencia (%)',
-        data: modeloActivo.diametros[0].curvas.caudal_lmin.map((c, i) => ({ x: c, y: (modeloActivo.eficiencia || [70, 75, 80, 78, 74])[i] })),
-        borderColor: 'rgba(0, 128, 0, 1)',
-        fill: false,
-        tension: 0.4
-      }];
-
-      renderChart("graficoAltura", "Altura (m)", "Caudal (L/min)", datasetsAltura);
-      renderChart("graficoPotencia", "Potencia (HP)", "Caudal (L/min)", datasetsPotencia);
-      renderChart("graficoNPSH", "NPSH (m)", "Caudal (L/min)", datasetNPSH);
-      renderChart("graficoEficiencia", "Eficiencia (%)", "Caudal (L/min)", datasetEficiencia);
-    }
-
-    function renderChart(canvasId, labelY, labelX, datasets) {
-      const ctx = document.getElementById(canvasId).getContext("2d");
-      if (charts[canvasId]) charts[canvasId].destroy();
-
-      charts[canvasId] = new Chart(ctx, {
-        type: "line",
-        data: { datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { title: { display: true, text: labelX } },
-            y: { title: { display: true, text: labelY } }
-          },
-          plugins: {
-            legend: { position: "top" },
-            tooltip: { mode: "index", intersect: false }
-          },
-          animation: { duration: 800, easing: "easeInOutQuad" }
-        }
-      });
-    }
+    rpmSelect.addEventListener("change", () => {
+      const serie = dataGlobal.find(s => s.nombre === serieSelect.value);
+      const modelo = serie.modelos.find(m => m.codigo === modeloSelect.value);
+      dibujarGraficos(modelo);
+    });
 
     function limpiarGraficos() {
-      Object.values(charts).forEach(ch => ch.destroy());
-      charts = {};
+      ["graficoAltura","graficoPotencia","graficoNPSH","graficoEficiencia"].forEach(id=>{
+        Plotly.purge(id);
+      });
     }
 
-    function mostrarMensaje(msg) {
-      alert(msg);
-    }
+    function dibujarGraficos(modelo) {
+      limpiarGraficos();
 
-    window.onload = cargarDatos;
+      let dataAltura = [], dataPotencia = [], dataNPSH = [], dataEficiencia = [];
+
+      let motor = modelo;
+      if (modelo.codigo === "CB-100") {
+        const rpm = rpmSelect.value;
+        motor = modelo.rpm[rpm];
+      }
+
+      if (!motor) return;
+
+      motor.diametros.forEach((d,i) => {
+        const color = `hsl(${i*60}, 70%, 45%)`;
+
+        dataAltura.push({
+          x: d.curvas.caudal_lmin,
+          y: d.curvas.altura_m,
+          mode: 'lines+markers',
+          name: `${d.mm} mm`,
+          line: { color, shape: 'spline', width: 2 }
+        });
+
+        dataPotencia.push({
+          x: d.curvas.caudal_lmin,
+          y: d.curvas.potencia_hp,
+          mode: 'lines+markers',
+          name: `${d.mm} mm`,
+          line: { color, shape: 'spline', width: 2 }
+        });
+      });
+
+      if (motor.npsh) {
+        dataNPSH.push({
+          x: motor.npsh.caudal_lmin,
+          y: motor.npsh.npsh_m,
+          mode: 'lines+markers',
+          name: "NPSH",
+          line: { color: '#FF3333', shape: 'spline', width: 2 }
+        });
+      }
+
+      if (motor.eficiencia) {
+        dataEficiencia.push({
+          x: motor.diametros[0].curvas.caudal_lmin,
+          y: motor.eficiencia,
+          mode: 'lines+markers',
+          name: "Eficiencia",
+          line: { color: '#00ff99', shape: 'spline', width: 2 }
+        });
+      }
+
+      Plotly.newPlot('graficoAltura', dataAltura, { title: "Altura vs Caudal (m - L/min)", paper_bgcolor: 'white', plot_bgcolor: 'white', font:{color:'black'} });
+      Plotly.newPlot('graficoPotencia', dataPotencia, { title: "Potencia vs Caudal (HP - L/min)", paper_bgcolor: 'white', plot_bgcolor: 'white', font:{color:'black'} });
+      Plotly.newPlot('graficoNPSH', dataNPSH, { title: "NPSH (m) vs Caudal (L/min)", paper_bgcolor: 'white', plot_bgcolor: 'white', font:{color:'black'} });
+      Plotly.newPlot('graficoEficiencia', dataEficiencia, { title: "Eficiencia (%) vs Caudal (L/min)", paper_bgcolor: 'white', plot_bgcolor: 'white', font:{color:'black'} });
+    }
   </script>
-  <footer>
-    © 2025 MSbombas.cl – Todos los derechos reservados <br>
-    Ingeniería en Bombeo y Soluciones Hidráulicas
-  </footer>
 </body>
 </html>
